@@ -55,7 +55,7 @@ class Car:
         self.vitesse_max=vtp[3]/di
         self.vitesse_actuelle=0
         self.acceleration=vtp[4]/di
-        self.frein=vtp[5]/10
+        self.frein=vtp[5]/di
         self.decceleration=vtp[6]/di
         self.tournant=vtp[7]
         self.agl=agl
@@ -204,9 +204,8 @@ def verif_keys(car):
         if key[K_SPACE]: car.bouger("space")
     return car
 
-
 def course():
-    mape=load_mape("mape.nath")
+    mape=load_mape("mape_p.nath")
     #
     img=Image.new("RGBA",[mape.shape[0],mape.shape[1]],(0,0,0,0))
     im=img.load()
@@ -229,7 +228,7 @@ def course():
         pc=random.choice(cdeb)
         while pc in pdebdc and len(pdebdc) < len(cdeb): pc=random.choice(cdeb)
         pcx,pcy=pc[0]*tc,pc[1]*tc
-        cars.append( Car(pcx,pcy,0,90) )
+        cars.append( Car(pcx,pcy,1,90) )
     finis=[]
     mycar=cars[0]
     cam=[-mycar.px+tex/2,-mycar.py+tey/2]

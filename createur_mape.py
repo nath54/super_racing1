@@ -100,6 +100,10 @@ def main():
                 elif event.key==K_HOME and tc<500:
                     tc+=1
                     for m in emape: m[2]=pygame.transform.scale(m[2],[tc,tc])
+                elif event.key==K_r:
+                    for x in range(mtx):
+                        for y in range(mty):
+                            mape[x,y]=0
             elif event.type==MOUSEBUTTONDOWN: isclick=True
             elif event.type==MOUSEBUTTONUP:
                 isclick=False
