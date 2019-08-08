@@ -1,5 +1,5 @@
 #coding:utf-8
-import random,pygame,math,time,numpy
+import random,pygame,math,time,numpy,os
 from PIL import Image
 from pygame.locals import *
 
@@ -8,6 +8,8 @@ btex,btey=1280,1024
 tex,tey=1280,1024
 def rx(x): return int(x/btex*tex)
 def ry(y): return int(y/btey*tey)
+def rxx(x): return float(float(x)/float(btex)*float(tex))
+def ryy(y): return float(float(y)/float(btey)*float(tey))
 fenetre=pygame.display.set_mode([tex,tey],pygame.FULLSCREEN)
 pygame.display.set_caption("Super Racing")
 
@@ -33,9 +35,9 @@ emape.append( ["arivée",100,pygame.transform.scale(pygame.image.load(dimg+"arri
 #0=nom 1=pmd 2=img
 
 voitures=[]
-voitures.append( ["nula",rx(75),ry(75),30,0.2,0.15,0.05,3,"v1.png"] )
-voitures.append( ["forta",rx(75),ry(75),100,0.5,0.35,0.05,4,"v2.png"] )
-#0=nom 1=tx 2=ty 3=vit max 4=acc 5=frein 6=decc 7=tournant 8=img
+voitures.append( ["nula",rx(75),rx(75),rx(30),rxx(0.2),rxx(0.10),rxx(1),rxx(0.1),3,"v1.png"] )
+voitures.append( ["forta",rx(75),rx(75),rx(100),rxx(0.5),rxx(0.25),rxx(1),rxx(0.1),4,"v2.png"] )
+#0=nom 1=tx 2=ty 3=vit max 4=acc 5=recul 6=frein 7=decc 8=tournant 9=img
 
 di=1
 
@@ -55,11 +57,12 @@ class Car:
         self.vitesse_max=vtp[3]/di
         self.vitesse_actuelle=0
         self.acceleration=vtp[4]/di
-        self.frein=vtp[5]/di
-        self.decceleration=vtp[6]/di
-        self.tournant=vtp[7]
+        self.recul=vtp[5]/di
+        self.frein=vtp[6]/di
+        self.decceleration=vtp[7]/di
+        self.tournant=vtp[8]
         self.agl=agl
-        self.img_b=pygame.transform.scale(pygame.image.load(dimg+vtp[8]),[self.tx,self.ty])
+        self.img_b=pygame.transform.scale(pygame.image.load(dimg+vtp[9]),[self.tx,self.ty])
         self.img=pygame.transform.rotate(self.img_b,-self.agl)
         self.dbg=time.time()
         self.tbg=0.01/di
@@ -70,39 +73,58 @@ class Car:
         self.fini=False
         self.img_cvit=pygame.transform.scale( pygame.image.load(dimg+"cvit.png"), [rx(200),ry(200)])
         self.img_bvit=pygame.transform.scale( pygame.image.load(dimg+"cvit_b.png"), [rx(200),ry(200)])
+        self.dacc=time.time()
+        self.tacc=0.01
+        self.dfrein=time.time()
+        self.tfrein=0.01
+        self.dtourn=time.time()
+        self.ttourn=0.01
+        self.drecul=time.time()
+        self.trecul=0.01
+        self.isacc=False
     def bouger(self,aa):
-        if time.time()-self.dkey>=self.tkey:
-            self.dkey=time.time()
+        if True:
             if aa=="up":
-                self.vitesse_actuelle+=self.acceleration
-                if self.vitesse_actuelle>self.vitesse_max: self.vitesse_actuelle=self.vitesse_max
+                if time.time()-self.dacc >= self.tacc:
+                    self.dacc=time.time()
+                    self.vitesse_actuelle+=self.acceleration
+                    if self.vitesse_actuelle>self.vitesse_max: self.vitesse_actuelle=self.vitesse_max
             elif aa=="down":
-                self.vitesse_actuelle-=self.frein
-                if self.vitesse_actuelle<-self.vitesse_max: self.vitesse_actuelle=-self.vitesse_max
+                if time.time()-self.drecul >= self.trecul:
+                    self.drecul=time.time()
+                    self.vitesse_actuelle-=self.recul
+                    if self.vitesse_actuelle<-self.vitesse_max: self.vitesse_actuelle=-self.vitesse_max
             elif aa=="left":
-                self.agl-=self.tournant
-                if self.agl<0: self.agl=360+self.agl
-                self.img=pygame.transform.rotate(self.img_b,-self.agl)
+                if time.time()-self.dtourn >= self.ttourn:
+                    self.dtourn=time.time()
+                    self.agl-=self.tournant
+                    if self.agl<0: self.agl=360+self.agl
+                    self.img=pygame.transform.rotate(self.img_b,-self.agl)
             elif aa=="right":
-                self.agl+=self.tournant
-                if self.agl>360: self.agl=self.agl-360
-                self.img=pygame.transform.rotate(self.img_b,-self.agl)
+                if time.time()-self.dtourn >= self.ttourn:
+                    self.dtourn=time.time()
+                    self.agl+=self.tournant
+                    if self.agl>360: self.agl=self.agl-360
+                    self.img=pygame.transform.rotate(self.img_b,-self.agl)
             elif aa=="space":
-                if self.vitesse_actuelle>0:
-                    if self.vitesse_actuelle>=self.frein: self.vitesse_actuelle-=self.frein
-                    else: self.vitesse_actuelle=0
-                if self.vitesse_actuelle<0:
-                    if self.vitesse_actuelle<=-self.frein: self.vitesse_actuelle+=self.frein
-                    else: self.vitesse_actuelle=0
+                if time.time()-self.dfrein>=self.tfrein:
+                    self.dfrein=time.time()
+                    if self.vitesse_actuelle>0:
+                        if self.vitesse_actuelle>=self.frein: self.vitesse_actuelle-=self.frein
+                        else: self.vitesse_actuelle=0
+                    if self.vitesse_actuelle<0:
+                        if self.vitesse_actuelle<=-self.frein: self.vitesse_actuelle+=self.frein
+                        else: self.vitesse_actuelle=0
     def update(self,mape):
         if time.time()-self.dbg>=self.tbg:
             self.dbg=time.time()
-            if self.vitesse_actuelle>0:
-                if self.vitesse_actuelle>=self.decceleration: self.vitesse_actuelle-=self.decceleration
-                else: self.vitesse_actuelle=0
-            if self.vitesse_actuelle<0:
-                if self.vitesse_actuelle<=-self.decceleration: self.vitesse_actuelle+=self.decceleration
-                else: self.vitesse_actuelle=0
+            if not self.isacc:
+                if self.vitesse_actuelle>0:
+                    if self.vitesse_actuelle>=self.decceleration: self.vitesse_actuelle-=self.decceleration
+                    else: self.vitesse_actuelle=0
+                if self.vitesse_actuelle<0:
+                    if self.vitesse_actuelle<=-self.decceleration: self.vitesse_actuelle+=self.decceleration
+                    else: self.vitesse_actuelle=0
             xx,yy=0,0
             if self.agl>=0 and self.agl<90:
                 yy=-math.cos( math.radians(self.agl) )*self.vitesse_actuelle
@@ -125,8 +147,8 @@ class Car:
                 self.px+=xx
                 self.py+=yy
             self.rect=pygame.Rect(self.px,self.py,self.tx,self.ty)
-            for x in range(int((self.px)/tc-1),int((self.px)/tc+2)):
-                for y in range(int((self.py)/tc-1),int((self.py)/tc+2)):
+            for x in range(int((self.px)/tc-3),int((self.px)/tc+3)):
+                for y in range(int((self.py)/tc-3),int((self.py)/tc+3)):
                     if x>=0 and y>=0 and x < mape.shape[0] and y < mape.shape[1]: 
                         mrect=pygame.draw.rect(fenetre,(0,0,0),(x*tc,y*tc,tc,tc),2)
                         if self.rect.colliderect(mrect):
@@ -180,6 +202,9 @@ def aff(mape,cars,mycar,cam,fps,imgminimape):
         posv=[rx(800)-adj,ry(150)-opp]
     fenetre.blit( mycar.img_cvit , [rx(700),ry(50)])
     pygame.draw.line(fenetre,(200,200,255),(rx(800),ry(150)),posv,3)
+    pygame.draw.rect(fenetre,(150,150,150),(rx(740),ry(130),rx(100),ry(40)),0)
+    pygame.draw.rect(fenetre,(0,0,0),(rx(740),ry(130),rx(100),ry(40)),rx(2))
+    fenetre.blit( font2.render(str(int(mycar.vitesse_actuelle))+" km/h",True,(0,155,0)) , [rx(745),ry(140)])
     #minimape
     fenetre.blit( imgminimape , [pmmx,pmmy])
     pygame.draw.rect(fenetre,(0,0,0),(pmmx,pmmy,tmmx,tmmy),rx(2))
@@ -205,13 +230,16 @@ def verif_keys(car):
     return car
 
 def course():
-    mape=load_mape("mape_p.nath")
+    fm=random.choice( os.listdir(dmape) )
+    mape=load_mape(fm)
     #
     img=Image.new("RGBA",[mape.shape[0],mape.shape[1]],(0,0,0,0))
     im=img.load()
     for x in range(mape.shape[0]):
         for y in range(mape.shape[1]):
-            if mape[x,y] in [1,3,4,5,6]: im[x,y]=(255,255,255,255)
+            if mape[x,y] in [1,4,5]: im[x,y]=(155,155,155,255)
+            elif mape[x,y]==2: im[x,y]=(0,0,0,255)
+            elif mape[x,y] in [3,6]: im[x,y]=(255,255,255,255)
     img.save("mape.png")
     imgminimape=pygame.transform.scale(pygame.image.load("mape.png"),[tmmx,tmmy])
     #
@@ -253,6 +281,9 @@ def course():
             if event.type==QUIT: exit()
             elif event.type==KEYDOWN:
                 if event.key==K_ESCAPE: encour=False
+                mycar.isacc=True
+            elif event.type==KEYUP:
+                mycar.isacc=False
         if len(finis)==len(cars):
             encour=False
             fini=True
@@ -271,7 +302,19 @@ def course():
                 elif event.type==KEYDOWN:
                     if event.key==K_ESCAPE: encour2=False
 
+def aff_m():
+    fenetre.fill( (0,0,0) )
+    pygame.display.update()
 
+def menu():
+    encour=True
+    while encour:
+        for event in pygame.event.get():
+            if event.type==QUIT: exit()
+            elif event.type==K_KEY:
+                if event.key==K_ESCAPE: encour=False
+            elif event.type==MOUSEBUTTONUP:
+                pos=pygame.mouse.get_pos()
 
 course()
 

@@ -12,13 +12,13 @@ dimg="images/"
 tc=100
 
 emape=[]
-emape.append( ["herbe",75,pygame.transform.scale(pygame.image.load(dimg+"herbe.png"),[tc,tc])] )
-emape.append( ["route",100,pygame.transform.scale(pygame.image.load(dimg+"route.png"),[tc,tc])] )
-emape.append( ["mur1",False,pygame.transform.scale(pygame.image.load(dimg+"mur1.png"),[tc,tc])] )
-emape.append( ["départ",100,pygame.transform.scale(pygame.image.load(dimg+"arive.png"),[tc,tc])] )
-emape.append( ["place depart",100,pygame.transform.scale(pygame.image.load(dimg+"place_dep.png"),[tc,tc])] )
-emape.append( ["route2",100,pygame.transform.scale(pygame.image.load(dimg+"route2.png"),[tc,tc])] )
-emape.append( ["arivée",100,pygame.transform.scale(pygame.image.load(dimg+"arrivee.png"),[tc,tc])] )
+emape.append( ["herbe",75,pygame.transform.scale(pygame.image.load(dimg+"herbe.png"),[tc,tc]),pygame.image.load(dimg+"herbe.png")] )
+emape.append( ["route",100,pygame.transform.scale(pygame.image.load(dimg+"route.png"),[tc,tc]),pygame.image.load(dimg+"route.png")] )
+emape.append( ["mur1",False,pygame.transform.scale(pygame.image.load(dimg+"mur1.png"),[tc,tc]),pygame.image.load(dimg+"mur1.png")] )
+emape.append( ["départ",100,pygame.transform.scale(pygame.image.load(dimg+"arive.png"),[tc,tc]),pygame.image.load(dimg+"arive.png")] )
+emape.append( ["place depart",100,pygame.transform.scale(pygame.image.load(dimg+"place_dep.png"),[tc,tc]),pygame.image.load(dimg+"place_dep.png")] )
+emape.append( ["route2",100,pygame.transform.scale(pygame.image.load(dimg+"route2.png"),[tc,tc]),pygame.image.load(dimg+"route2.png")] )
+emape.append( ["arivée",100,pygame.transform.scale(pygame.image.load(dimg+"arrivee.png"),[tc,tc]),pygame.image.load(dimg+"arrivee.png")] )
 #0=nom 1=pmd 2=img
 
 def load():
@@ -42,6 +42,19 @@ def save(mape):
     f.write(txt)
     f.close()
 
+def cbord(mape):
+    for x in range(mape.shape[0]):
+        for y in range(mape.shape[1]):
+            mm=mape[x,y]
+            if mm in [1,3,4,5,6]:
+                for xx in range(-1,2):
+                    for yy in range(-1,2):
+                        try:
+                            if mape[x+xx,y+yy]==0: mape[x+xx,y+yy]=2
+                        except:
+                            pass
+    return mape
+
 def aff(mape,tcurs,pos,emap,cam,tc):
     fenetre.fill((0,0,0))
     for x in range(int((-cam[0])/tc),int((-cam[0]+tex)/tc+1)):
@@ -60,7 +73,7 @@ def aff(mape,tcurs,pos,emap,cam,tc):
 
 def main():
     tc=100
-    mtx,mty=100,100
+    mtx,mty=1000,1000
     if "mape.nath" in os.listdir("./"): mape=load()
     else:
         mape=numpy.zeros([mtx,mty],dtype=int)
@@ -93,17 +106,20 @@ def main():
                 elif event.key==K_DOWN: cam[1]-=tc
                 elif event.key==K_LEFT: cam[0]+=tc
                 elif event.key==K_RIGHT: cam[0]-=tc
-                elif event.key==K_s: save(mape)
+                elif event.key==K_s:
+                    save(mape)
+                    print("saved")
                 elif event.key==K_END and tc>20:
                     tc-=1
-                    for m in emape: m[2]=pygame.transform.scale(m[2],[tc,tc])
+                    for m in emape: m[2]=pygame.transform.scale(m[3],[tc,tc])
                 elif event.key==K_HOME and tc<500:
                     tc+=1
-                    for m in emape: m[2]=pygame.transform.scale(m[2],[tc,tc])
+                    for m in emape: m[2]=pygame.transform.scale(m[3],[tc,tc])
                 elif event.key==K_r:
                     for x in range(mtx):
                         for y in range(mty):
                             mape[x,y]=0
+                elif event.key==K_b: mape=cbord(mape)
             elif event.type==MOUSEBUTTONDOWN: isclick=True
             elif event.type==MOUSEBUTTONUP:
                 isclick=False
